@@ -1,0 +1,10 @@
+{
+"type": "progress",
+	"payload" : {
+"type":"progress",
+"step":"step",
+"message": "msg",
+"value":95.0
+},
+"source": "BLUEPRINT"
+}
