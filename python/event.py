@@ -1,6 +1,7 @@
 import time
 
 class Event:
+
   def __init__(self, meta, payload):
     self.payload = payload
     self.metaData = meta

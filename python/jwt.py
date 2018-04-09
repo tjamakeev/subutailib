@@ -6,8 +6,11 @@ class JwtToken(object):
     self.parse()
 
   def parse(self):
-    print(self.value)
     data = self.value.split(".")[1]
-    payload = json.loads(base64.decodestring(data))
-    self.subutaiId = payload["sub"]
+    self.data = base64.decodestring(data)
+    self.payload = json.loads(self.data)
+    self.subutaiId = self.payload["sub"]
+    self.expire = self.payload["exp"]
 
+  def __str__(self):
+    return self.data

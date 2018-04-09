@@ -38,13 +38,15 @@ class LogPayload(object):
   def __init__(self, level, source,  message):
     self.type="log"
     if type(level) != LogLevel:
-	raise ValueError('Invalid log level.')    
+	    raise ValueError('Invalid log level.')
     self.level = str(level)
     self.source = source
     self.message = message
+  def __str__(self):
+    return __dict__["TRACE"]
 
 class CustomPayload(object):
-  def __init__(self, key, value):
+  def __init__(self, value):
     self.type="custom"
-    self.key = key
-    self.value = value
+    self.message = value
+
