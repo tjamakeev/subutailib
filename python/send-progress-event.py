@@ -1,11 +1,13 @@
 #!/usr/bin/python
 import httplib, json, urllib
-from progresspayload import ProgressPayload
-from progressevent import ProgressEvent
+from payload import ProgressPayload, LogPayload, LogLevel
+from metadata import MetaData
+from event import Event
+from jwt import JwtToken
 
 def getconnection():
   return httplib.HTTPConnection("10.10.10.1:8080")
-  
+
 def gettoken(ip):
   conn = getconnection()
   conn.request("GET","/rest/v1/metadata/token/"+ip)
@@ -13,18 +15,17 @@ def gettoken(ip):
   conn.close()
   return response
   
-def readtoken():
+def readJwtToken():
   with open("/etc/subutai/jwttoken", "r") as tokenFile:
-    return tokenFile.read().replace("\n","")
+    return JwtToken(tokenFile.read().replace("\n",""))
 
 def getip():
   return "172.20.71.2"
 
-def sendevent(event):
+def sendevent(jwtToken, event):
   conn = getconnection()
-  headers = {"Content-type": "application/json", "Authorization": "Bearer "+ readtoken()}
+  headers = {"Content-type": "application/json", "Authorization": "Bearer "+ jwtToken}
   params = json.dumps(event, default=jsonDefault)
-  print(params)
   conn.request("POST", "/rest/v1/metadata/event", params, headers=headers)
   response = conn.getresponse()
   conn.close()
@@ -36,14 +37,24 @@ def jsonDefault(object):
 r = gettoken(getip())
 
 if r.status == 204:
+  jwtToken = readJwtToken()
+  origin = jwtToken.subutaiId
+  sourceType = MetaData.BLUEPRINT
+  sourceName = "my-cool-cassandra-script"
+  metadata = MetaData(origin, sourceType, sourceName)
+  metadata.add("OS", "debian")
   payload = ProgressPayload("Initial step", "Script started...", 10.0)
 
-  print(json.dumps(payload.__dict__))
-
-  progressevent= ProgressEvent(payload, "BLUEPRINT")
+  progressevent= Event(metadata, payload)
   print(json.dumps(progressevent, default=jsonDefault))
-  r = sendevent(progressevent)
+  r = sendevent(jwtToken.value, progressevent)
   print(r.status)
+  print(r.read())
+  logevent = Event(metadata,LogPayload("LogPayload.TRACE", "source","trace info"))
+  print(json.dumps(logevent, default=jsonDefault))
+  r = sendevent(jwtToken.value, logevent)
+  print(r.status)
+  print(r.read())
 else:
   print("Error on requiesting JWT tokein:"+ r.reason)
 
