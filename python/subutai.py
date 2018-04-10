@@ -19,17 +19,30 @@ class Subutai(object):
     return response
 
   def readJwtToken(self):
-    with open("/etc/subutai/jwttoken", "r") as tokenFile:
-      return JwtToken(tokenFile.read().replace("\n",""))
+    try:
+	with open("/etc/subutai/jwttoken", "r") as tokenFile:
+    	    return JwtToken(tokenFile.read().replace("\n",""))
+    except:
+	return None
 
   def getJwtToken(self):
     token = self.readJwtToken()
+
+    if token == None:
+	self.requesttoken()
+	print "There is no JWT token at all. Token requested. Please run this script again."
+	sys.exit()
+
     n = datetime.datetime.now()
+
     exp = datetime.datetime.fromtimestamp(token.expire)
+
     if (exp-n).total_seconds() < 100:
-      self.requesttoken()
-      return self.readJwtToken()
-    return token
+        self.requesttoken()
+	print "JWT token expired. Token requested. Please run this script again."
+	sys.exit()
+
+    return self.readJwtToken()
 
   def getip(self):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
