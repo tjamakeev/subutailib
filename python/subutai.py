@@ -90,6 +90,8 @@ def sendTestEvents():
 
 
 if __name__ == "__main__":
+  sendTestEvents()
+  sys.exit()
   parser = OptionParser()
   parser.add_option("-s", "--source", dest="source",
                   help="set event source", metavar="SOURCE")
@@ -98,6 +100,4 @@ if __name__ == "__main__":
                   help="set event type", metavar="TYPE")
 
   (options, args) = parser.parse_args()
-
-  print options
 
