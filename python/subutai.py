@@ -4,7 +4,7 @@ from payload import ProgressPayload, LogPayload, LogLevel, CustomPayload
 from metadata import MetaData, SourceMeta, OriginMeta
 from event import Event
 from jwt import JwtToken
-from optparse import OptionParser
+import argparse
 
 class Subutai(object):
   def getconnection(self):
@@ -20,27 +20,27 @@ class Subutai(object):
 
   def readJwtToken(self):
     try:
-	with open("/etc/subutai/jwttoken", "r") as tokenFile:
-    	    return JwtToken(tokenFile.read().replace("\n",""))
+      with open("/etc/subutai/jwttoken", "r") as tokenFile:
+        return JwtToken(tokenFile.read().replace("\n",""))
     except:
-	return None
+      return None
 
   def getJwtToken(self):
     token = self.readJwtToken()
 
     if token == None:
-	self.requesttoken()
-	print "There is no JWT token at all. Token requested. Please run this script again."
-	sys.exit()
+      self.requesttoken()
+      print("There is no JWT token at all. Token requested. Please run this script again.")
+      sys.exit()
 
     n = datetime.datetime.now()
 
     exp = datetime.datetime.fromtimestamp(token.expire)
 
     if (exp-n).total_seconds() < 100:
-        self.requesttoken()
-	print "JWT token expired. Token requested. Please run this script again."
-	sys.exit()
+      self.requesttoken()
+      print "JWT token expired. Token requested. Please run this script again."
+      sys.exit()
 
     return self.readJwtToken()
 
@@ -67,14 +67,14 @@ class Subutai(object):
 
   def newMetadata(self, sourceType, sourceName):
     jwtToken = self.getJwtToken()
-    return MetaData(OriginMeta(jwtToken.subutaiId),SourceMeta(sourceType, sourceName))
+    parts = list(jwtToken.subutaiId.split("."))
+    return MetaData(OriginMeta(parts[0], parts[1], parts[2]),SourceMeta(sourceType, sourceName))
 
 def jsonDefault(object):
     return object.__dict__
 
 def sendTestEvents():
   subutai = Subutai()
-
   sourceName = "my-cool-cassandra-script"
   metadata = subutai.newMetadata(SourceMeta.BLUEPRINT, sourceName)
   metadata.add("OS", "debian")
@@ -85,7 +85,6 @@ def sendTestEvents():
   r = subutai.sendevent(progressevent)
   print(r.status)
   print(r.read())
-
 
   metadata.add("now", str(datetime.datetime.now()))
   logevent = Event(metadata,LogPayload(LogPayload.TRACE, "source","trace info"))
@@ -101,16 +100,26 @@ def sendTestEvents():
   print(r.status)
   print(r.read())
 
+def sendProgressEvent(step, message, value):
+  subutai = Subutai()
+  sourceName = "MY-BLUEPRINT"
+  metadata = subutai.newMetadata(SourceMeta.BLUEPRINT, sourceName)
+  payload = ProgressPayload(step,message, value)
+
+  progressevent= Event(metadata, payload)
+  print(json.dumps(progressevent, default=jsonDefault))
+  r = subutai.sendevent(progressevent)
+  print(r.status)
+  print(r.read())
 
 if __name__ == "__main__":
-  sendTestEvents()
-  sys.exit()
-  parser = OptionParser()
-  parser.add_option("-s", "--source", dest="source",
-                  help="set event source", metavar="SOURCE")
+  # sendTestEvents()
+  parser = argparse.ArgumentParser()
+  parser.add_argument("step")
 
-  parser.add_option("-t", "--type", dest="type",
-                  help="set event type", metavar="TYPE")
+  parser.add_argument("message")
 
-  (options, args) = parser.parse_args()
+  parser.add_argument("value")
+  args = parser.parse_args()
 
+  sendProgressEvent(args.step, args.message,args.value)

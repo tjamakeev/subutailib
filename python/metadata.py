@@ -32,9 +32,11 @@ class MetaData(object):
 
 class OriginMeta(object):
 
-  def __init__(self, id):
+  def __init__(self, environmentId, peerId, containerId):
     self.type = "origin"
-    self.id = id
+    self.environmentId = environmentId
+    self.peerId = peerId
+    self.containerId = containerId
 
 class SourceMeta(object):
   CONTAINER = SourceType(SourceType.CONTAINER)
