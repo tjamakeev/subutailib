@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import httplib, json, urllib, socket, sys, datetime
+import httplib, json, urllib, socket, sys, datetime, time
 from payload import ProgressPayload, LogPayload, LogLevel, CustomPayload
 from metadata import MetaData, SourceMeta, OriginMeta
 from event import Event
@@ -100,17 +100,18 @@ def sendTestEvents():
   print(r.status)
   print(r.read())
 
-def sendProgressEvent(step, message, value):
+def sendProgressEvent(step, message, sleep):
   subutai = Subutai()
   sourceName = "MY-BLUEPRINT"
   metadata = subutai.newMetadata(SourceMeta.BLUEPRINT, sourceName)
-  payload = ProgressPayload(step,message, value)
 
-  progressevent= Event(metadata, payload)
-  print(json.dumps(progressevent, default=jsonDefault))
-  r = subutai.sendevent(progressevent)
-  print(r.status)
-  print(r.read())
+  for i in range(1,101):
+    payload = ProgressPayload(step+str(i),message+'. Now: '+ datetime.datetime.now().strftime("%B %d, %Y %h:%m:%s"), i)
+
+    progressevent= Event(metadata, payload)
+    r = subutai.sendevent(progressevent)
+    print(r.status)
+    time.sleep(float(sleep))
 
 if __name__ == "__main__":
   # sendTestEvents()
@@ -119,7 +120,8 @@ if __name__ == "__main__":
 
   parser.add_argument("message")
 
-  parser.add_argument("value")
+  parser.add_argument("sleep")
+
   args = parser.parse_args()
 
-  sendProgressEvent(args.step, args.message,args.value)
+  sendProgressEvent(args.step, args.message, args.sleep)
